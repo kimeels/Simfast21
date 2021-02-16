@@ -30,7 +30,7 @@ M. G. Santos, L. Ferramacho, M. B. Silva, A. Amblard, A. Cooray, MNRAS 2010, htt
 #define CM_PER_MPC 3.0857e24
 #define MASSFRAC 0.76
 
-double Rion(float hmass, double redshift);
+double Rion(float hmass, double redshift, double Cion, double Dion);
 double Rrec(float overdensity, double redshift);
 double G_H(double redshift);
 double XHI(double ratio);
@@ -53,10 +53,11 @@ int main(int argc, char *argv[]) {
   double kk;
   double bfactor; /* value by which to divide bubble size R */
   double neutral,*xHI;
-  float *halo_map, *top_hat_r, *density_map,*bubblef, *bubble, *fresid, *halo_map1;  
+  float *halo_map, *top_hat_r, *density_map,*bubblef, *bubble, *fresid, *halo_map1;
   fftwf_complex *halo_map_c, *top_hat_c, *collapsed_mass_c, *density_map_c, *total_mass_c, *bubble_c;
   fftwf_plan pr2c1,pr2c2,pr2c3,pr2c4,pc2r1,pc2r2,pc2r3;
   double zmin,zmax,dz;
+  double Cion,Dion;
   double R;
 
 
@@ -70,6 +71,8 @@ int main(int argc, char *argv[]) {
   zmin=global_Zminsim;
   zmax=global_Zmaxsim;
   dz=global_Dzsim;
+  Cion=global_Cion;
+  Dion=global_Dion;
 
 #ifdef _OMPTHREAD_
   omp_set_num_threads(global_nthreads);
@@ -93,8 +96,8 @@ int main(int argc, char *argv[]) {
       printf("Error creating directory!\n");
       exit(1);
     }
-  }  
-  
+  }
+
  /* Memory allocation - we could do some of the FFTs inline... */
  /*************************************************************/
 
@@ -110,8 +113,8 @@ int main(int argc, char *argv[]) {
   if(!(pr2c1=fftwf_plan_dft_r2c_3d(global_N_smooth, global_N_smooth, global_N_smooth, density_map, density_map_c, FFTWflag))) {
     printf("Memory Problem3...\n");
     exit(1);
-  }  
-  /* halo_map mass */ 
+  }
+  /* halo_map mass */
   if(!(halo_map1=(float *) fftwf_malloc(global_N3_halo*sizeof(float)))) {
     printf("Memory Problem4...\n");
     exit(1);
@@ -195,8 +198,8 @@ int main(int argc, char *argv[]) {
   printf("Redshift cycle...\n");fflush(0);
 
 
-  
-  
+
+
   /****************************************************/
   /****************************************************/
   /****************************************************/
@@ -211,7 +214,7 @@ int main(int argc, char *argv[]) {
     if (fid==NULL) {printf("\nError reading deltanl file... Check path or if the file exists..."); exit (1);}
     elem=fread(density_map,sizeof(float),global_N3_smooth,fid);
     fclose(fid);
-    
+
     /* Calculate the residual neutral fraction and recombination rate */
 #ifdef _OMPTHREAD_
 #pragma omp parallel for shared(global_N3_smooth, density_map, fresid, bubblef, redshift) private(i)
@@ -219,7 +222,7 @@ int main(int argc, char *argv[]) {
     for(i=0;i<(global_N3_smooth);i++){
       fresid[i] = (1. + density_map[i])*1.881e-7*pow(1.+redshift,3.0)*G_H(redshift); // ratio between hydrogen recombination coefficient and uniform ionising background (Haardt & Madau (2012)).
       fresid[i] = XHI(fresid[i]); // Residual neutral fraction following Popping et al. (2009).
-      density_map[i]= Rrec(1.0+density_map[i], redshift); // Rrec from the CIC nonlinear density field. 
+      density_map[i]= Rrec(1.0+density_map[i], redshift); // Rrec from the CIC nonlinear density field.
 
       bubblef[i]=0.0;
     }
@@ -232,22 +235,22 @@ int main(int argc, char *argv[]) {
 #endif
       for(i=0;i<(global_N3_halo);i++){
 	      halo_map1[i] =0.0;
-      }      
-      sprintf(fname, "%s/Halos/halonl_z%.3f_N%ld_L%.1f.dat.catalog",argv[1],redshift,global_N_halo,global_L/global_hubble); 
+      }
+      sprintf(fname, "%s/Halos/halonl_z%.3f_N%ld_L%.1f.dat.catalog",argv[1],redshift,global_N_halo,global_L/global_hubble);
       fid=fopen(fname,"rb");
       if (fid==NULL) {printf("\nError reading %s file... Check path or if the file exists...",fname); exit (1);}
       elem=fread(&nhalos,sizeof(long int),1,fid);
       printf("Reading %ld halos...\n",nhalos);fflush(0);
-      if(!(halo_v=(Halo_t *) malloc(nhalos*sizeof(Halo_t)))) { 
+      if(!(halo_v=(Halo_t *) malloc(nhalos*sizeof(Halo_t)))) {
 	      printf("Memory Problem - halo...\n");
 	      exit(1);
       }
       elem=fread(halo_v,sizeof(Halo_t),nhalos,fid);
       fclose(fid);
-    
+
       // CIC Rion//
       for(i=0;i<nhalos;i++){
-	      CIC(halo_v[i].x, halo_v[i].y, halo_v[i].z, Rion(halo_v[i].Mass, redshift), halo_map1, global_N_halo);  /* distributes Rion over cells */
+	      CIC(halo_v[i].x, halo_v[i].y, halo_v[i].z, Rion(halo_v[i].Mass, redshift, Cion, Dion), halo_map1, global_N_halo);  /* distributes Rion over cells */
       }
       free(halo_v);
       smooth_box(halo_map1, halo_map, global_N_halo, global_N_smooth);  /* Sums Rion over cells to reduce resolution - smooth_box averages down the box */
@@ -256,7 +259,7 @@ int main(int argc, char *argv[]) {
 #endif
       for(i=0;i<(global_N3_smooth);i++){
 	      halo_map[i] = halo_map[i]*pow(global_dx_smooth/global_dx_halo,3)*global_fesc; /* corrects for the fact that we averaged instead of summing... */
-      }     
+      }
       /******************************/
       /* uses SFRD boxes instead: */
     } else {
@@ -273,7 +276,7 @@ int main(int argc, char *argv[]) {
 	      halo_map[i] = halo_map[i]*global_dx_smooth*global_dx_smooth*global_dx_smooth*Qion(redshift)*global_fesc;
       }
     }
-      
+
     /* Quick fill of single cells before going to bubble cycle */
 #ifdef _OMPTHREAD_
 #pragma omp parallel for shared(global_N3_smooth,halo_map,density_map,bubblef) private(i,tmp)
@@ -290,15 +293,15 @@ int main(int argc, char *argv[]) {
     fftwf_execute(pr2c1);    /* FFT density map */
     fftwf_execute(pr2c2);   /* FFT halo map */
 
-    
-    
+
+
     /****************************************************/
     /****************************************************/
     /************** going over the bubble sizes for each z ****************/
     R=global_bubble_Rmax;    /* Maximum bubble size...*/
     while(R>=2*global_dx_smooth){ /* only tries to find bubbles using this method down to a certain minimum size because of resolution effects */
-    
-      //      printf("bubble radius R= %lf\n", R);fflush(0);    
+
+      //      printf("bubble radius R= %lf\n", R);fflush(0);
       //      printf("Filtering halo and density boxes...\n");fflush(0);
 
       /* this cycle smoothes "recombinations" and "ionisations" over a given sphere size */
@@ -328,7 +331,7 @@ int main(int argc, char *argv[]) {
 
       //      printf("Starting to find and fill bubbles...\n");fflush(0);
 
-      /* this cycle finds ionisation bubbles and signals the center of those bubbles */      
+      /* this cycle finds ionisation bubbles and signals the center of those bubbles */
 #ifdef _OMPTHREAD_
 #pragma omp parallel for shared(halo_map,density_map, bubble, global_N_smooth,flag_bub) private(ii,ij,ik,ind)
 #endif
@@ -352,7 +355,7 @@ int main(int argc, char *argv[]) {
       }
 
       /* the next section uses a special technique to try to signal all points in the final bubble box as 0 or 1. It calculates the value in each cell as a convolution between a top hat window of radius R (0s and 1s) and the bubble box above of 0s and 1s which signals the center of bubbles of radius R. The convolution will either give zero if there are no bubbles over the radius or some number greater than zero otherwise. Maximum value would be the integral over the top-hat window, e.g. 4/3*pi*R^3. For only one bubble contributing, the result of the convolution would be dx^3 */
-      
+
       /* this cycle generates a spherical window function  in real space for a given R (top hat window) - 0s and 1s */
       /* it could be done outside the redshift cycle but would require saving the window for different sizes */
       if(flag_bub>0){
@@ -371,7 +374,7 @@ int main(int argc, char *argv[]) {
 	}
 	fftwf_execute(pr2c3); /* FFT window above (top_hat_r) - dx^3 missing */
 	fftwf_execute(pr2c4); /* FFT ionisation/bubble centers box above (bubble) - dx^3 missing */
-      
+
 	/* Make convolution between the two boxes above */
 #ifdef _OMPTHREAD_
 #pragma omp parallel for shared(bubble_c,top_hat_c,global_N_smooth) private(i)
@@ -383,15 +386,15 @@ int main(int argc, char *argv[]) {
 
 	/* so missing factors are dx^6*dk^3 = (L/N)^6*(1/L)^3 = L^3/N^6 = dx^3/N^3 */
 	/* after correcting by the missing factors, the values will be between zero and 4/3*pi*R^3. The minimum non-zero value will be dx^3, with dx=L/N */
-        
+
 #ifdef _OMPTHREAD_
 #pragma omp parallel for shared(bubble,bubblef,global_N3_smooth) private(i)
 #endif
 	for (i=0; i<global_N3_smooth; i++){
 	  bubble[i]=bubble[i]*pow(global_dx_smooth,3)/global_N3_smooth;
 	  if (bubble[i]>pow(global_dx_smooth,3)/100) bubblef[i]=1.0; /* neutral should be zero. use dx^3/100 for minimum positive value...*/
-	} 
-	
+	}
+
       } /* ends filling out bubbles in box for R */
 
       R/=bfactor;
@@ -400,8 +403,8 @@ int main(int argc, char *argv[]) {
     /* just to check smallest bubbles through older method */
     printf("Going to smaller R cycle...\n"); fflush(0);
     while(R>=global_dx_smooth){
-  
-      //      printf("bubble radius R= %lf\n", R);fflush(0); 
+
+      //      printf("bubble radius R= %lf\n", R);fflush(0);
       flag_bub=0;
 #ifdef _OMPTHREAD_
 #pragma omp parallel for shared(collapsed_mass_c,halo_map_c,total_mass_c,density_map_c,global_N_smooth,global_dx_smooth,global_dk,R) private(i,j,p,indi,indj,kk)
@@ -497,7 +500,7 @@ int main(int argc, char *argv[]) {
 #pragma omp parallel for shared(bubblef,global_N3_smooth) private(i)
 #endif
     for(i=0;i<global_N3_smooth;i++) bubblef[i]=0.0;
-  
+
   while(redshift<(zmax+dz/10)) {
     //    printf("z(>%f) = %f\n",global_xHlim,redshift);fflush(0);
     xHI[iz]=1.0;
@@ -506,7 +509,7 @@ int main(int argc, char *argv[]) {
       printf("Error opening file:%s\n",fname);
       exit(1);
     }
-    elem=fwrite(bubblef,sizeof(float),global_N3_smooth,fid);  
+    elem=fwrite(bubblef,sizeof(float),global_N3_smooth,fid);
     fclose(fid);
     iz++;
     redshift+=dz;

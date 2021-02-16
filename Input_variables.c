@@ -12,21 +12,21 @@ Input_variables: Reads simfast21.ini
 
 #include "Input_variables.h"
 
-                        			  
+
 void get_Simfast21_params(char *basedir){
-  
+
   FILE * paramfile;
-  
+
   char line[256],fname[300];
   int length,n;
-  char first[100], third[100];  
+  char first[100], third[100];
   char *cpoint;
- 
+
   length=256;
   global_camb_file[0]=0;
 
-  sprintf(fname, "%s/simfast21.ini",basedir); 
-  if((paramfile=fopen(fname,"r"))==NULL){  
+  sprintf(fname, "%s/simfast21.ini",basedir);
+  if((paramfile=fopen(fname,"r"))==NULL){
     printf("\nThe parameter file simfast21.ini cannot be open. Exit...\n");
     exit(1);
   }
@@ -48,15 +48,15 @@ void get_Simfast21_params(char *basedir){
       else if(strcmp(first,"zmax")==0)global_Zmaxsim=atof(third);
       else if(strcmp(first,"zmin")==0) global_Zminsim=atof(third);
       else if(strcmp(first,"sim_length")==0)global_L=atof(third);  /* Mpc */
-      else if(strcmp(first,"seed")==0) global_seed=atoi(third);   
+      else if(strcmp(first,"seed")==0) global_seed=atoi(third);
       else if(strcmp(first,"Vel_comp")==0)global_vi=atoi(third);
       else if(strcmp(first,"N_halo")==0)global_N_halo=atoi(third);
       else if(strcmp(first,"N_smoothed")==0)global_N_smooth=atoi(third);
 
       /***** Cosmological parameters *****/
       if(strcmp(first,"use_camb_matterpower")==0){
-	      if(strcmp(third,"T")==0) global_pk_flag=1;    
-	      if(strcmp(third,"F")==0) global_pk_flag=0;    
+	      if(strcmp(third,"T")==0) global_pk_flag=1;
+	      if(strcmp(third,"F")==0) global_pk_flag=0;
       }
       else if(strcmp(first,"camb_file")==0)strcpy(global_camb_file,third);
       else if(strcmp(first,"omega_matter")==0)global_omega_m=atof(third);
@@ -64,7 +64,12 @@ void get_Simfast21_params(char *basedir){
       else if(strcmp(first,"omega_lambda")==0)global_lambda=atof(third);
       else if(strcmp(first,"hubble")==0)global_hubble=atof(third);
       else if(strcmp(first,"spectral_index")==0)global_n_index=atof(third);
-      else if(strcmp(first,"sigma8")==0)global_sig8_new=atof(third);    
+      else if(strcmp(first,"sigma8")==0)global_sig8_new=atof(third);
+
+      /***** Astrophysical parameters *****/
+      else if(strcmp(first,"Cion")==0)global_Cion=atof(third);
+      else if(strcmp(first,"Dion")==0)global_Dion=atof(third);
+
 
       /* Halos */
       else if(strcmp(first,"critical_overdensity")==0)global_delta_c=atof(third);
@@ -73,7 +78,7 @@ void get_Simfast21_params(char *basedir){
       else if(strcmp(first,"STc")==0)global_STc=atof(third);
       else if(strcmp(first,"Use_subgrid")==0){
 	      if(strcmp(third,"T")==0) global_use_sgrid=1; else global_use_sgrid=0;
-      }    
+      }
       else if(strcmp(first,"halo_Mmin")==0)global_halo_Mmin=atof(third);
       else if(strcmp(first,"halo_dlm")==0)global_halo_dlm=atof(third);
 
@@ -85,11 +90,11 @@ void get_Simfast21_params(char *basedir){
 
       /* xray + Lya */
       else if(strcmp(first,"use_SFR")==0){
-      	if(strcmp(third,"T")==0) global_use_SFR=1;    
+      	if(strcmp(third,"T")==0) global_use_SFR=1;
 	      if(strcmp(third,"F")==0) global_use_SFR=0;
       }
       else if(strcmp(first,"use_Lya_xrays")==0){
-      	if(strcmp(third,"T")==0) global_use_Lya_xrays=1;    
+      	if(strcmp(third,"T")==0) global_use_Lya_xrays=1;
 	      if(strcmp(third,"F")==0) global_use_Lya_xrays=0;
       }
       else if(strcmp(first,"Zminsfr")==0) global_Zminsfr=atof(third);
@@ -100,11 +105,11 @@ void get_Simfast21_params(char *basedir){
 
       /* Auxiliary */
       else if(strcmp(first,"Original_nldensity_box")==0){
-	      if(strcmp(third,"T")==0) global_save_original_deltanl=1;    
+	      if(strcmp(third,"T")==0) global_save_original_deltanl=1;
 	      if(strcmp(third,"F")==0) global_save_original_deltanl=0;
-      }      
+      }
 
-    }   
+    }
   }
   if(global_pk_flag==1) {
     printf("# Using CAMB file for cosmology.\n");
@@ -134,7 +139,7 @@ void get_Simfast21_params(char *basedir){
   global_Zminsfr=global_Zmaxsim-global_Dzsim*(double)ceil((global_Zmaxsim-global_Zminsfr)/global_Dzsim);
 
   if(global_Zminsfr < global_Zminsim) global_Zminsfr = global_Zminsim;  /* make sure the SFR redshifts are consistent with the simulation */
-  
+
   //  print_parms();
 
   fclose(paramfile);
@@ -145,20 +150,20 @@ void get_Simfast21_params(char *basedir){
 void set_cosmology_fromCAMB(char * paramfilename) {
 
   FILE * paramfile;
-  
+
   char line[256];
   int length,n;
-  char first[99], third[99];  
+  char first[99], third[99];
   double ombh2,omch2,omk,w;
   char use_phys[99], root[99];
   char *cpoint;
   length=256;
- 
+
   ombh2=0;
   omch2=0;
   omk=0;
 
-  if((paramfile=fopen(paramfilename,"r"))==NULL){  
+  if((paramfile=fopen(paramfilename,"r"))==NULL){
     printf("\nThe CAMB parameter file cannot be open. Exit...\n");
     exit(1);
   }
@@ -173,17 +178,17 @@ void set_cosmology_fromCAMB(char * paramfilename) {
       else if(strcmp(first,"ombh2")==0)ombh2=atof(third);
       else if(strcmp(first,"omch2")==0)omch2=atof(third);
       else if(strcmp(first,"omk")==0)omk=atof(third);
-      
+
       else if(strcmp(first,"omega_baryon")==0 && strcmp(use_phys,"F")==0)global_omega_b=atof(third);
       else if(strcmp(first,"omega_cdm")==0 && strcmp(use_phys,"F")==0)global_omega_m=atof(third);  /* CDM for now */
       else if(strcmp(first,"omega_lambda")==0 && strcmp(use_phys,"F")==0)global_lambda=atof(third);
-      
+
       else if(strcmp(first,"hubble")==0)global_hubble=atof(third)/100.;
       else if(strcmp(first,"w")==0)w=atof(third);
       else if(strcmp(first,"scalar_spectral_index(1)")==0)global_n_index=atof(third);
-      
+
       else if(strcmp(first,"output_root")==0)strcpy(root,third);
-    
+
       else if(strcmp(first,"transfer_matterpower(1)")==0){
 	strcat(root,"_");
 	strcat(root,third);
@@ -206,10 +211,10 @@ void print_parms(void) {
   printf("Input parameters:\n");
   printf("global_nthreads: %d\n",global_nthreads);
   printf("global_seed: %ld\n",global_seed);
-  printf("global_N_halo: %ld\n",global_N_halo); //Linear number of cells of the box for determination of collapsed halos 
-  printf("global_N3_halo: %ld\n",global_N3_halo); //Total number of cells of the box for determination of collapsed halos 
-  printf("global_N_smooth: %ld\n",global_N_smooth); // Linear number of cells of the smoothed boxes  
-  printf("global_N3_smooth: %ld\n",global_N3_smooth); // Total number of cells of the smoothed boxes  
+  printf("global_N_halo: %ld\n",global_N_halo); //Linear number of cells of the box for determination of collapsed halos
+  printf("global_N3_halo: %ld\n",global_N3_halo); //Total number of cells of the box for determination of collapsed halos
+  printf("global_N_smooth: %ld\n",global_N_smooth); // Linear number of cells of the smoothed boxes
+  printf("global_N3_smooth: %ld\n",global_N3_smooth); // Total number of cells of the smoothed boxes
   printf("global_smooth_factor: %f\n",global_smooth_factor); //Just N_halo/N_smooth
   printf("global_L: %f Mpc/h\n",global_L); //Physical size of the simulation box
   printf("global_L3: %f (Mpc/h)^3\n",global_L3);//Physical volume of the simulation box
@@ -228,7 +233,7 @@ void print_parms(void) {
   printf("global_n_index: %f\n",global_n_index);
   printf("global_hubble: %f\n",global_hubble);
   printf("global_omega_m: %f\n",global_omega_m);
-  printf("global_omega_b: %f\n", global_omega_b);  
+  printf("global_omega_b: %f\n", global_omega_b);
   printf("global_lambda: %f\n",global_lambda);
   printf("global_rho_m: %E\n",global_rho_m);
   printf("global_rho_b: %E\n",global_rho_b);
@@ -256,7 +261,7 @@ void print_parms(void) {
   printf("global_camb_file: %s\n",global_camb_file);
 
 
-  /*-------------------Flags for output files and algorithm----------------------------------*/ 
+  /*-------------------Flags for output files and algorithm----------------------------------*/
   printf("global_save_original_deltanl: %d\n",global_save_original_deltanl);
   printf("global_use_Lya_xrays: %d\n",global_use_Lya_xrays);
   printf("global_use_SFR: %d\n",global_use_SFR);
@@ -265,11 +270,10 @@ void print_parms(void) {
   /*--------- Parameters for X-ray heating and Lya coupling----------*/
   printf("global_Enu0: %E\n",global_Enu0);
   printf("global_alphas: %f\n",global_alphas);
-  printf("global_L0: %E\n",global_L0); 		
+  printf("global_L0: %E\n",global_L0);
   printf("global_flux_Rmax: %f\n",global_flux_Rmax);
   printf("\n");
 
   fflush(0);
 
 }
-

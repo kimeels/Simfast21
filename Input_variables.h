@@ -13,8 +13,8 @@ SimFast21
 
 /*----Declaration of functions for reading params and setting vars-----------*/
 
-void set_cosmology_fromCAMB(char * paramfilename); 
-void get_Simfast21_params(char * basedir); 
+void set_cosmology_fromCAMB(char * paramfilename);
+void get_Simfast21_params(char * basedir);
 void print_parms(void);
 
 
@@ -22,10 +22,10 @@ void print_parms(void);
 
 int global_nthreads;
 long int global_seed;
-long int global_N_halo; //Linear number of cells of the box for determination of collapsed halos 
-long int global_N3_halo; //Total number of cells of the box for determination of collapsed halos 
-long int global_N_smooth; // Linear number of cells of the smoothed boxes  
-long int global_N3_smooth; // Total number of cells of the smoothed boxes  
+long int global_N_halo; //Linear number of cells of the box for determination of collapsed halos
+long int global_N3_halo; //Total number of cells of the box for determination of collapsed halos
+long int global_N_smooth; // Linear number of cells of the smoothed boxes
+long int global_N3_smooth; // Total number of cells of the smoothed boxes
 float global_smooth_factor; //Just N_halo/N_smooth
 double global_L; //Physical size of the simulation box
 double global_L3;//Physical volume of the simulation box
@@ -45,11 +45,18 @@ double global_Zminsfr;
 double global_sig8_new;
 double global_n_index;
 double global_hubble;
-double global_omega_m;   
-double global_omega_b;   
+double global_omega_m;
+double global_omega_b;
 double global_lambda;
 double global_rho_m;
 double global_rho_b;
+
+
+/*-----------------------Astrophysical parameters--------------------------- */
+
+double global_Cion;
+double global_Dion;
+
 
 /*------------------------Halo collapse parameters-----------------------------*/
 
@@ -78,7 +85,7 @@ char global_camb_file[99];
 
 
 
-/*-------------------Flags for output files and algorithm----------------------------------*/ 
+/*-------------------Flags for output files and algorithm----------------------------------*/
 int global_use_sgrid;
 int global_save_original_deltanl;
 int global_use_Lya_xrays;
@@ -89,14 +96,14 @@ int global_use_SFR;
 double global_fstar;
 double global_Enu0;
 double global_alphas;
-double global_L0; 		
+double global_L0;
 double global_flux_Rmax;
 
 
 
 /* Additional variable for Lyalpha coupling and X-ray heating */
 
-#define G 6.67300e-11 
+#define G 6.67300e-11
 #define Msun 1.989e30 /* Kg */
 #define mbar 1.67e-27 /* = mproton (Kg) */
 
@@ -110,6 +117,3 @@ double global_flux_Rmax;
 
 
 #endif
-
- 
-

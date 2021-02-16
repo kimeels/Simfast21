@@ -14,11 +14,11 @@ See arXiv:1510.04280 for more details
 #include "Input_variables.h"
 #include "auxiliary.h"
 
-double Rion(float hmass, double redshift);
+double Rion(float hmass, double redshift, double Cion, double Dion);
 double Rrec(float overdensity, double redshift);
 double G_H(double redshift);
 double XHI(double ratio);
-double sfr(float hmass, double z);
+double sfr(float hmass, double z, double Cion, double Dion);
 double Qion(double z);
 double ebG(double nu);
 
@@ -33,13 +33,13 @@ double ebG(double nu);
 #define c1      1.575e39
 #define c2      9.367608e+07
 //#define c3      4.09039945e-01
-#define c3      0.44
-#define c4      2.27044695e+00
+//#define c3      0.44
+//#define c4      2.27044695e+00
 #define V_norm  1.e+45
 
-double Rion(float hmass, double redshift){
-  double tmp_ion1 =  c1*hmass*pow((1.0 + redshift ),c4);
-  double tmp_ion2 =  pow((hmass/c2),c3);
+double Rion(float hmass, double redshift, double Cion, double Dion){
+  double tmp_ion1 =  c1*hmass*pow((1.0 + redshift ),Dion);
+  double tmp_ion2 =  pow((hmass/c2),Cion);
   double tmp_ion3 =  exp(- pow((c2/hmass),3.0));
   double tmp_ion4 =  tmp_ion1*tmp_ion2*tmp_ion3;
   double tmp_ion5 =  tmp_ion4/V_norm;
@@ -68,9 +68,9 @@ double Rrec(float overdensity, double redshift){
 /********* SFR ****************/
 /* units: M_sun/yr */
 
-double sfr(float hmass, double z) {
+double sfr(float hmass, double z, double Cion, double Dion) {
 
-  return (Rion(hmass,z)/Qion(z));
+  return (Rion(hmass,z,Cion,Dion)/Qion(z));
 
 }
 
@@ -101,7 +101,7 @@ double G_H(double redshift){
 double XHI(double ratio){
   double XHI_tmp1 = 2.*ratio + 1. - sqrt((2.*ratio + 1.)*(2.*ratio + 1.) - 4.*ratio*ratio  );
   double XHI_tmp3 = XHI_tmp1/(2.*ratio);
-  if(ratio == 0.0) return 0.0; 
+  if(ratio == 0.0) return 0.0;
   else  return XHI_tmp3;
 }
 
